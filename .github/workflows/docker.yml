@@ -1,0 +1,42 @@
+name: docker
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  push:
+    branches:
+    - master
+    - release/*
+
+jobs:
+  build:
+    name: Build linux images.
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Docker login
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}  
+        PASSWORD: ${{ secrets.PASSWORD }}
+      run: |
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        docker login -u $USER_NAME -p $PASSWORD
+        docker buildx create --use
+
+    - name: Build ChatGpt
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+      working-directory: .
+      run: |
+        docker pull $USER_NAME/chatgpt:latest || :
+        docker buildx build --push --platform linux/arm64/v8,linux/amd64 --cache-from $USER_NAME/chatgpt:latest --pull --file Dockerfile --tag $USER_NAME/chatgpt:latest .
+
+    - name: Docker logout
+      run: |
+        docker logout
