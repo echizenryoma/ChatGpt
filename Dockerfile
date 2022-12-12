@@ -1,4 +1,4 @@
-FROM python:3.11.1-slim-bullseye
+FROM python:3.10-slim-bullseye
 WORKDIR /opt/chatgpt-telegram-bot
 RUN apt-get update && apt -y install git \
     && rm -rf /var/lib/apt/lists/*
